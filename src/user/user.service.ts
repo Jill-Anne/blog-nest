@@ -5,7 +5,9 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
 import { sign, verify } from 'jsonwebtoken'; // Assuming you will use jsonwebtoken for token generation
+import { compare } from 'bcrypt';
 import * as dotenv from 'dotenv';
+import { LoginDto } from '@/user/dto/loginUser.dto';
 dotenv.config();
 
 @Injectable()
@@ -78,5 +80,31 @@ export class UserService {
         token: this.generateToken(user), // Generate a token for the user
       },
     };
+  }
+
+  async loginUser(loginUserDto: LoginDto): Promise<IUserResponse> {
+    //check if user exists
+    const user = await this.userRepository.findOne({
+      where: {
+        email: loginUserDto.email, // Find user by email
+      },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        'Wrong email or password',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    //check if provide correct password
+    const matchPassword = await compare(loginUserDto.password, user.password);
+    if (!matchPassword) {
+      throw new HttpException(
+        'Wrong email or password',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    return this.generateUserResponse(user);
   }
 }
