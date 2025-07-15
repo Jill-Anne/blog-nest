@@ -35,7 +35,7 @@ export class UserService {
 
     const userByUsername = await this.userRepository.findOne({
       where: {
-        username: createUserDto.name, // Check if a user with the same username already exists
+        username: createUserDto.username, // Check if a user with the same username already exists
       },
     });
 
