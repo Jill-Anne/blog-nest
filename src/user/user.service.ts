@@ -6,8 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
 import { sign, verify } from 'jsonwebtoken'; // Assuming you will use jsonwebtoken for token generation
 import { compare } from 'bcrypt';
-import * as dotenv from 'dotenv';
 import { LoginDto } from '@/user/dto/loginUser.dto';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
 @Injectable()
@@ -74,6 +74,9 @@ export class UserService {
 
   //Returns the user data along with a token.
   generateUserResponse(user: UserEntity): IUserResponse {
+    if (!user.id) {
+      throw new HttpException('User data is missing', HttpStatus.BAD_REQUEST); // Ensure user exists
+    }
     return {
       user: {
         ...user,
@@ -106,5 +109,22 @@ export class UserService {
       );
     }
     return this.generateUserResponse(user);
+  }
+
+  async findById(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException(
+        'User with ID ${id} not found',
+        HttpStatus.NOT_FOUND, // Return 404 if user not found
+      );
+    }
+
+    return user; // Return the found user
   }
 }
